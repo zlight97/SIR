@@ -1,0 +1,1 @@
+This is an implementation of the SIR project, using the working memory toolkit

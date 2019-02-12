@@ -57,11 +57,7 @@ int main(int argc, char* argv[])
         string input;
         cout<<currentChoice<<endl;
         cin>>input;
-        if(currentChoice.ch[0]!='R'&&input!="P")
-        {
-
-        }
-        else if(currentChoice.ch[0]=='R')
+        if(currentChoice.ch[0]=='R')
         {
             if(atoi(input.ch)==atoi(lastSaved.ch))
                 reward = 1;
