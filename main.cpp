@@ -56,6 +56,9 @@ int main(int argc, char* argv[])
         double reward = 0;
         string input;
         cout<<currentChoice<<endl;
+        //give output to AI here:
+
+
         // cin>>input;
         // if(currentChoice.ch[0]!='R'&&input!="P")
         // {
@@ -64,11 +67,11 @@ int main(int argc, char* argv[])
         // else
         if(currentChoice.ch[0]=='R')
         {
-            cin>>input;
+            cin>>input;//take input from AI here
             if(atoi(input.ch)==atoi(lastSaved.ch))
                 reward = 1;
+            cout<<"Reward is: "<<reward<<endl; 
         }
-        cout<<"Reward is: "<<reward<<endl; 
         currentChoice=generateChoice();
         if(currentChoice.ch[0]=='S')
             lastSaved = currentChoice.ch[2];

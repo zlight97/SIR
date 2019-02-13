@@ -1,6 +1,6 @@
 #include "game.h"
 
-App::App(int trials)
+App::App()
 {
     responded = false;
     response = NONE;
@@ -34,9 +34,9 @@ void App::play()
 
     time_t seed = time(NULL);
     srand(seed);
-    srand32(seed);
-    std::cout<< "Random Seed: "<<seed;
-    
+    srand48(seed);
+    cout<< "Random Seed: "<<seed;
+
 }
 
 bool App::setResponse()
