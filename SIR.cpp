@@ -1,4 +1,4 @@
-#include <WMtk.h>
+#include "WMtk.h"
 #include "SIR.h"
 #include <iostream>
 #include <stdlib.h>
@@ -34,7 +34,41 @@ void RunSimulation()
     cerr<< "Random Seed is: "<<random_seed<<"\n";
     state current_state;
     bool use_actor = false;
-    //line 114 of DelayedSaccadeTask.cpp
+    OR_CODE or_code = NOISY_OR;
+    
+    WorkingMemory WM(wm_size, state_feature_vector_size,
+	chunk_feature_vector_size, &current_state, user_reward_function,
+	user_state_function, user_chunk_function, user_delete_function, use_actor,
+	or_code);
+
+	// Use learning rate
+	WM.getCriticNetwork()->setLearningRate(lrate);
+
+	/// Use lambda
+	WM.getCriticNetwork()->setLambda(lambda);
+
+	// Use gamma
+	WM.getCriticNetwork()->setGamma(ngamma);
+
+	// Use exploration percentage
+	WM.setExplorationPercentage(exploration_percentage);
+
+	// A list of chunk items for consideration for the Working Memory System
+	list<Chunk> candidate_chunks;
+
+	// A single chunk
+	Chunk chunk;
+
+	// Save the network to a file before beginning the simulation.
+	WM.saveNetwork("./starting_network.dat");
+
+    //loop for number of trials
+    for(int trial = 0; trial< number_of_trials; trial++)
+    {
+        generateTrial(current_state);
+        WM.newEpisode(true);
+        
+    }
 }
 
 void generateTrial(state& current_state)

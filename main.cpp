@@ -1,7 +1,6 @@
 #include <iostream>
 #include <thread>
 #include <ctime>
-#include "game.h"
 
 #define ch c_str()
 using namespace std;
