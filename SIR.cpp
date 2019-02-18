@@ -1,9 +1,33 @@
-#include "WMtk.h"
+#include <WMtk.h>
 #include "SIR.h"
 #include <iostream>
 #include <stdlib.h>
 
 using namespace std;
+
+Chunk generateChoice()
+{
+    int c1 = rand()%3;
+    int c2 = rand()%3+1;
+    sir_chunk *ret = new sir_chunk;
+    switch(c1)
+    {
+        case 0:
+            ret->sir=S;
+        break;
+        case 1:
+            ret->sir=I;
+        break;
+        case 2:
+            ret->sir=R;
+        break;
+    }
+    ret->value = c2;
+    Chunk ch;
+    ch.setData(ret);
+    ch.setType("SIR");
+    return ch;
+}
 
 void RunSimulation()
 {
@@ -67,7 +91,45 @@ void RunSimulation()
     {
         generateTrial(current_state);
         WM.newEpisode(true);
-        
+        bool flag = false;
+        while(((sir_chunk*)((chunk=generateChoice()).getData()))->sir!=R||!flag)
+        {
+            sir_chunk *ch = (sir_chunk*)chunk.getData();
+            current_state.sir = ch->sir;
+            current_state.value = ch->value;
+            if(current_state.sir==S)
+            {
+                flag = true;
+                current_state.saved=current_state.value;
+            }
+            candidate_chunks.push_back(chunk);
+            WM.tickEpisodeClock(candidate_chunks);
+        }
+        cout<<trial<< " ";
+        		if (current_state.success) {
+			window[goodness_index++] = 1;
+			for (q = 0; q < window_size; q++)
+				goodness += (double) window[q];
+			goodness /= (double) window_size;
+
+			cout << "1 " << goodness << endl;
+		}
+		else {
+			window[goodness_index++] = 0;
+			for (q = 0; q < window_size; q++)
+				goodness += (double) window[q];
+			goodness /= (double) window_size;
+
+			cout << "0 " << goodness << endl;
+		}
+
+		if (goodness_index == window_size)
+			goodness_index = 0;
+
+		// If we are performing as well as we want, then we're finished.
+		if (goodness >= finished_percentage) {
+			break;
+		}
     }
 }
 
@@ -76,6 +138,7 @@ void generateTrial(state& current_state)
     current_state.sir = NOTHING;
     current_state.value = 0;
     current_state.saved = 0;
+    current_state.success=0;
 }
 
 double user_reward_function(WorkingMemory& wm)
@@ -84,8 +147,34 @@ double user_reward_function(WorkingMemory& wm)
     double reward = 0.;
     //this next line holds the case where R is called before S
     //This also may be where I need to pull a random one from memory
-    if(current_state->saved==current_state->value)
-        reward = 1.;
+    int number_of_chunks = wm.getNumberOfChunks();
+    if(number_of_chunks==0)
+        return 0.;
+    int x = rand()%number_of_chunks;
+    if(((sir_chunk*)(wm.getChunk(x).getData()))->value==current_state->saved)
+    {
+        reward = 100.;
+        current_state->success = 1;
+    }
+    char letter;
+    switch(((sir_chunk*)(wm.getChunk(x).getData()))->sir)
+    {
+        case S:
+        letter = 'S';
+        break;
+        case I:
+        letter = 'I';
+        break;
+        case R:
+        letter = 'R';
+        break;
+        default:
+        letter = '0';
+        break;
+    }
+    // cout<<"Size of the chunks is: "<<wm.getNumberOfChunks()<<"\nReward is: "
+    // <<reward<<"\nChosen was: "<<((sir_chunk*)(wm.getChunk(x).getData()))->value
+    // <<" "<<letter<<endl<<"Actual was: "<<current_state->saved<<endl<<endl;
     return reward;
 }
 void user_state_function(FeatureVector& fv, WorkingMemory& wm)

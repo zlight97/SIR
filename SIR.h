@@ -13,6 +13,7 @@ struct state
     SIR sir;
     int value;
     int saved;
+    bool success;
 };
 
 struct sir_chunk

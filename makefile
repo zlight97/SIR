@@ -7,7 +7,7 @@ PROGRAM = SIR
 
 # OPTFLAGS = -g  # for debug
 OPTFLAGS =
-CC       = g++ -std=c++11 -I/usr/local/include/wmtk -L/usr/local/lib -lWMtk
+CC       = g++ -g -std=c++11 -I/usr/local/include/wmtk -L/usr/local/lib -lWMtk
 CFLAGS   = -w $(OPTFLAGS) -ISOIL/includes
 
 #######################################################################
