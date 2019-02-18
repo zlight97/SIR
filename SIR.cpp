@@ -31,8 +31,8 @@ Chunk generateChoice()
 
 void RunSimulation()
 {
-    double finished_percentage = .98;
-    int number_of_trials = 10000;
+    double finished_percentage = .99;
+    int number_of_trials = 100000;
 
     int window_size = 20;
     double goodness = 0.;
@@ -46,11 +46,11 @@ void RunSimulation()
 
     int wm_size = 3;
     int state_feature_vector_size = 7;
-    int chunk_feature_vector_size = 2;
+    int chunk_feature_vector_size = 3;
     double lrate = .01;
     double lambda = .7;
     double ngamma = .99;
-    double exploration_percentage = .05;
+    double exploration_percentage = .02;
 
     time_t random_seed = time(NULL);
     srand(random_seed);
@@ -103,8 +103,9 @@ void RunSimulation()
                 current_state.saved=current_state.value;
             }
             candidate_chunks.push_back(chunk);
-            WM.tickEpisodeClock(candidate_chunks);
         }
+
+            WM.tickEpisodeClock(candidate_chunks);
         cout<<trial<< " ";
         		if (current_state.success) {
 			window[goodness_index++] = 1;
@@ -153,10 +154,12 @@ double user_reward_function(WorkingMemory& wm)
     int x = rand()%number_of_chunks;
     if(((sir_chunk*)(wm.getChunk(x).getData()))->value==current_state->saved)
     {
-        reward = 100.;
+        reward = 3.;//changing the value of the given reward drastically affects runtime
         current_state->success = 1;
     }
     char letter;
+    // if(current_state->sir!=R)
+    //     reward = 0;
     switch(((sir_chunk*)(wm.getChunk(x).getData()))->sir)
     {
         case S:
@@ -172,9 +175,9 @@ double user_reward_function(WorkingMemory& wm)
         letter = '0';
         break;
     }
-    // cout<<"Size of the chunks is: "<<wm.getNumberOfChunks()<<"\nReward is: "
-    // <<reward<<"\nChosen was: "<<((sir_chunk*)(wm.getChunk(x).getData()))->value
-    // <<" "<<letter<<endl<<"Actual was: "<<current_state->saved<<endl<<endl;
+    cout<<"\nSize of the chunks is: "<<wm.getNumberOfChunks()<<"\nReward is: "
+    <<reward<<"\nChosen was: "<<((sir_chunk*)(wm.getChunk(x).getData()))->value
+    <<" "<<letter<<endl<<"Actual was: "<<current_state->saved<<endl<<endl;
     return reward;
 }
 void user_state_function(FeatureVector& fv, WorkingMemory& wm)
@@ -218,6 +221,8 @@ void user_chunk_function(FeatureVector& fv, Chunk& chk, WorkingMemory& wm)
                 fv.setValue(1,(float)((sir_chunk*)chk.getData())->value);
             break;
             case R:
+                fv.setValue(0,2.);
+                fv.setValue(1,(float)((sir_chunk*)chk.getData())->value);
                 //i dont think this can happen??
             break;
             default:
