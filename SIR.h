@@ -14,6 +14,7 @@ struct state
     int value;
     int saved;
     bool success;
+    float tested;
 };
 
 struct sir_chunk

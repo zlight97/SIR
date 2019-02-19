@@ -29,10 +29,22 @@ Chunk generateChoice()
     return ch;
 }
 
+Chunk generateS()
+{
+    int c1 = rand()%3+1;
+    sir_chunk *ret = new sir_chunk;
+    ret->value = c1;
+    ret->sir = S;
+    Chunk ch;
+    ch.setData(ret);
+    ch.setType("SIR");
+    return ch;
+}
+
 void RunSimulation()
 {
     double finished_percentage = .99;
-    int number_of_trials = 100000;
+    int number_of_trials = 10000;
 
     int window_size = 20;
     double goodness = 0.;
@@ -92,7 +104,8 @@ void RunSimulation()
         generateTrial(current_state);
         WM.newEpisode(true);
         bool flag = false;
-        while(((sir_chunk*)((chunk=generateChoice()).getData()))->sir!=R||!flag)
+        chunk = generateS();
+        while(((sir_chunk*)((chunk).getData()))->sir!=R/*||!flag*/)
         {
             sir_chunk *ch = (sir_chunk*)chunk.getData();
             current_state.sir = ch->sir;
@@ -100,12 +113,14 @@ void RunSimulation()
             if(current_state.sir==S)
             {
                 flag = true;
+                // cout<<"S"<<endl;
                 current_state.saved=current_state.value;
             }
             candidate_chunks.push_back(chunk);
+            // cout<<"chunks: "<<candidate_chunks.size()<<endl;
+            WM.tickEpisodeClock(candidate_chunks,true);
+            chunk=generateChoice();
         }
-
-            WM.tickEpisodeClock(candidate_chunks);
         cout<<trial<< " ";
         		if (current_state.success) {
 			window[goodness_index++] = 1;
@@ -140,6 +155,7 @@ void generateTrial(state& current_state)
     current_state.value = 0;
     current_state.saved = 0;
     current_state.success=0;
+    current_state.tested=0;
 }
 
 double user_reward_function(WorkingMemory& wm)
@@ -148,10 +164,16 @@ double user_reward_function(WorkingMemory& wm)
     double reward = 0.;
     //this next line holds the case where R is called before S
     //This also may be where I need to pull a random one from memory
+    if(current_state->tested<0)
+        return 0;
     int number_of_chunks = wm.getNumberOfChunks();
     if(number_of_chunks==0)
+    {
+        // cout<<"0"<<endl;
+        current_state->tested = -1.;
         return 0.;
-    int x = rand()%number_of_chunks;
+    }
+    int x = current_state->tested>0?current_state->tested:rand()%number_of_chunks;
     if(((sir_chunk*)(wm.getChunk(x).getData()))->value==current_state->saved)
     {
         reward = 3.;//changing the value of the given reward drastically affects runtime
@@ -175,9 +197,9 @@ double user_reward_function(WorkingMemory& wm)
         letter = '0';
         break;
     }
-    cout<<"\nSize of the chunks is: "<<wm.getNumberOfChunks()<<"\nReward is: "
-    <<reward<<"\nChosen was: "<<((sir_chunk*)(wm.getChunk(x).getData()))->value
-    <<" "<<letter<<endl<<"Actual was: "<<current_state->saved<<endl<<endl;
+    // cout<<"\nSize of the chunks is: "<<wm.getNumberOfChunks()<<"\nReward is: "
+    // <<reward<<"\nChosen was: "<<((sir_chunk*)(wm.getChunk(x).getData()))->value
+    // <<" "<<letter<<endl<<"Actual was: "<<current_state->saved<<endl<<endl;
     return reward;
 }
 void user_state_function(FeatureVector& fv, WorkingMemory& wm)
