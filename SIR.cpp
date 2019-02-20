@@ -62,8 +62,8 @@ void RunSimulation()
     double lrate = .01;
     double lambda = .7;
     double ngamma = .99;
-    double exploration_percentage = .02;
-
+    double exploration_percentage = .01;
+    time_t good_seed = 1550633852; //gets to 1 in 19 runs
     time_t random_seed = time(NULL);
     srand(random_seed);
     srand48(random_seed);
