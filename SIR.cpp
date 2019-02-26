@@ -5,6 +5,29 @@
 
 using namespace std;
 
+bool debug = false;
+
+char getLetterFromChunk(Chunk c)
+{
+    char letter;
+    switch(((sir_chunk*)(c.getData()))->sir)
+    {
+        case S:
+        letter = 'S';
+        break;
+        case I:
+        letter = 'I';
+        break;
+        case R:
+        letter = 'R';
+        break;
+        default:
+        letter = '0';
+        break;
+    }
+    return letter;
+}
+
 Chunk generateChoice()
 {
     int c1 = rand()%3;
@@ -23,6 +46,8 @@ Chunk generateChoice()
         break;
     }
     ret->value = c2;
+    if(c1==2)
+        ret->value = 0;
     Chunk ch;
     ch.setData(ret);
     ch.setType("SIR");
@@ -41,10 +66,11 @@ Chunk generateS()
     return ch;
 }
 
-void RunSimulation()
+void RunSimulation(bool verbose, bool end)
 {
+    debug = verbose;
     double finished_percentage = .99;
-    int number_of_trials = 10000;
+    int number_of_trials = 100000;
 
     int window_size = 20;
     double goodness = 0.;
@@ -57,13 +83,12 @@ void RunSimulation()
         window[q]=0;
 
     int wm_size = 3;
-    int state_feature_vector_size = 7;
-    int chunk_feature_vector_size = 3;
+    int state_feature_vector_size = 6;
+    int chunk_feature_vector_size = 6;
     double lrate = .01;
     double lambda = .7;
     double ngamma = .99;
-    double exploration_percentage = .01;
-    time_t good_seed = 1550633852; //gets to 1 in 19 runs
+    double exploration_percentage = .05;
     time_t random_seed = time(NULL);
     srand(random_seed);
     srand48(random_seed);
@@ -99,28 +124,39 @@ void RunSimulation()
 	WM.saveNetwork("./starting_network.dat");
 
     //loop for number of trials
+    sir_chunk *ch;
+    chunk = generateS();
     for(int trial = 0; trial< number_of_trials; trial++)
     {
+        // for(int i=0;i<WM.getNumberOfChunks();i++)
+        //     candidate_chunks.push_back(Chunk(WM.getChunk(i)));
+        WM.newEpisode(false);//this triggers reward
         generateTrial(current_state);
-        WM.newEpisode(true);
         bool flag = false;
-        chunk = generateS();
-        while(((sir_chunk*)((chunk).getData()))->sir!=R/*||!flag*/)
+        // chunk=generateS();
+        do
         {
-            sir_chunk *ch = (sir_chunk*)chunk.getData();
+            chunk=generateChoice();
+            ch = (sir_chunk*)chunk.getData();
+            if(debug)
+                cout<<"Generated Choice: "<<getLetterFromChunk(chunk)<<" "<<ch->value<<endl;
             current_state.sir = ch->sir;
             current_state.value = ch->value;
             if(current_state.sir==S)
             {
-                flag = true;
-                // cout<<"S"<<endl;
                 current_state.saved=current_state.value;
             }
+            if(ch->sir==R)
+                flag = true;
             candidate_chunks.push_back(chunk);
-            // cout<<"chunks: "<<candidate_chunks.size()<<endl;
-            WM.tickEpisodeClock(candidate_chunks,true);
-            chunk=generateChoice();
+            WM.tickEpisodeClock(candidate_chunks,false);//this triggers reward
         }
+        while(/*ch->sir!=R||*/!flag);
+
+
+
+
+
         cout<<trial<< " ";
         		if (current_state.success) {
 			window[goodness_index++] = 1;
@@ -144,66 +180,77 @@ void RunSimulation()
 
 		// If we are performing as well as we want, then we're finished.
 		if (goodness >= finished_percentage) {
-			break;
+			
+            if(debug||end)
+                cout<<"END!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<endl;
+            if(!end)
+                break;
+            
 		}
+        if(debug)
+            cout<<"END OF TRIAL!!!!!!!!!\n\n\n\n";
     }
 }
 
 void generateTrial(state& current_state)
 {
-    current_state.sir = NOTHING;
-    current_state.value = 0;
-    current_state.saved = 0;
+    // current_state.sir = NOTHING;
+    // current_state.value = 0;
+    // current_state.saved = 0;
     current_state.success=0;
     current_state.tested=0;
 }
 
 double user_reward_function(WorkingMemory& wm)
 {
+    if(debug)
+        cout<<"REWARD CALLED: "<<endl;
     state* current_state = (state*) wm.getStateDataStructure();
     double reward = 0.;
+    if(current_state->sir!=R)
+    {
+        if(debug)
+            cout<<"NOT R: "<<wm.getNumberOfChunks()<<"\n";
+        return 0.;
+    }
     //this next line holds the case where R is called before S
     //This also may be where I need to pull a random one from memory
-    if(current_state->tested<0)
-        return 0;
+    // if(current_state->tested<0)
+    //     return 0;
     int number_of_chunks = wm.getNumberOfChunks();
     if(number_of_chunks==0)
     {
-        // cout<<"0"<<endl;
+        if(debug)
+            cout<<"NO CHUNKS"<<endl;
         current_state->tested = -1.;
         return 0.;
     }
-    int x = current_state->tested>0?current_state->tested:rand()%number_of_chunks;
-    if(((sir_chunk*)(wm.getChunk(x).getData()))->value==current_state->saved)
+    int x = rand()%number_of_chunks;
+    sir_chunk* ch = ((sir_chunk*)(wm.getChunk(x).getData()));
+    if(ch->sir==I)
     {
-        reward = 3.;//changing the value of the given reward drastically affects runtime
+        reward = -1.;
+    }
+    else 
+    if(ch->value==current_state->saved)
+    {
+        reward = 10.;//changing the value of the given reward drastically affects runtime
         current_state->success = 1;
     }
-    char letter;
-    // if(current_state->sir!=R)
-    //     reward = 0;
-    switch(((sir_chunk*)(wm.getChunk(x).getData()))->sir)
-    {
-        case S:
-        letter = 'S';
-        break;
-        case I:
-        letter = 'I';
-        break;
-        case R:
-        letter = 'R';
-        break;
-        default:
-        letter = '0';
-        break;
-    }
-    // cout<<"\nSize of the chunks is: "<<wm.getNumberOfChunks()<<"\nReward is: "
-    // <<reward<<"\nChosen was: "<<((sir_chunk*)(wm.getChunk(x).getData()))->value
-    // <<" "<<letter<<endl<<"Actual was: "<<current_state->saved<<endl<<endl;
+
+    
+    if(debug)
+        cout<<"\nSize of the chunks is: "<<wm.getNumberOfChunks()<<"\nReward is: "
+        <<reward<<"\nChosen was: "<<((sir_chunk*)(wm.getChunk(x).getData()))->value
+        <<" "<<getLetterFromChunk(wm.getChunk(x))<<endl<<"Actual was: "<<current_state->saved<<endl<<endl;
+
+
     return reward;
 }
 void user_state_function(FeatureVector& fv, WorkingMemory& wm)
 {
+    if(debug)
+        cout<<"STATE VECTOR CALLED\n";
     fv.clearVector();
 
     state* current_state = (state*) wm.getStateDataStructure();
@@ -223,34 +270,35 @@ void user_state_function(FeatureVector& fv, WorkingMemory& wm)
     }
     if(current_state->value>0)
         fv.setValue(2+current_state->value,1.);
-    if(current_state->saved>0)
-        fv.setValue(6,(float)current_state->saved);//idk if this is right
+    // if(current_state->saved>0)
+    //     fv.setValue(6,(float)current_state->saved);//idk if this is right
     return;
 }
 void user_chunk_function(FeatureVector& fv, Chunk& chk, WorkingMemory& wm)
 {
     fv.clearVector();
-
+    sir_chunk* ch = ((sir_chunk*)chk.getData());
     if(chk.getType() == "SIR")
     {
-        switch(((sir_chunk*) chk.getData())->sir)
+        switch(ch->sir)
         {
             case S:
                 fv.setValue(0,1.);
-                fv.setValue(1,(double)((sir_chunk*)chk.getData())->value);
             break;
             case I:
-                fv.setValue(1,(float)((sir_chunk*)chk.getData())->value);
+                fv.setValue(1,1.);
             break;
             case R:
-                fv.setValue(0,2.);
-                fv.setValue(1,(float)((sir_chunk*)chk.getData())->value);
-                //i dont think this can happen??
+                fv.setValue(2,1.);
             break;
             default:
-                //this should only happen if R is called with no predecessor
             break;
         }
+    if(ch->value>0)
+    {
+        fv.setValue(ch->value+2,1.);
+        // cout<<"INDEX: "<<ch->value+2<<endl;
+    }
     }
 
 }
