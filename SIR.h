@@ -27,6 +27,7 @@ struct sir_chunk
 
 // This creates the state for a new trial
 void generateTrial(state& current_state);
+void resetSuccess(state& current_state);
 
 // User-defined function prototypes
 double user_reward_function(WorkingMemory& wm);

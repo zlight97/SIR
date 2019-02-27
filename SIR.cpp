@@ -2,6 +2,14 @@
 #include "SIR.h"
 #include <iostream>
 #include <stdlib.h>
+/*
+* Written by Zach Light, Last edited 2-27-2019
+* 
+*
+*
+*
+8
+*/
 
 using namespace std;
 
@@ -72,7 +80,7 @@ void RunSimulation(bool verbose, bool end)
     double finished_percentage = .99;
     int number_of_trials = 100000;
 
-    int window_size = 20;
+    int window_size = 50;
     double goodness = 0.;
     int goodness_index = 0;
     int window[window_size];
@@ -88,7 +96,7 @@ void RunSimulation(bool verbose, bool end)
     double lrate = .01;
     double lambda = .7;
     double ngamma = .99;
-    double exploration_percentage = .05;
+    double exploration_percentage = .01;
     time_t random_seed = time(NULL);
     srand(random_seed);
     srand48(random_seed);
@@ -128,15 +136,22 @@ void RunSimulation(bool verbose, bool end)
     chunk = generateS();
     for(int trial = 0; trial< number_of_trials; trial++)
     {
-        // for(int i=0;i<WM.getNumberOfChunks();i++)
-        //     candidate_chunks.push_back(Chunk(WM.getChunk(i)));
-        WM.newEpisode(false);//this triggers reward
-        generateTrial(current_state);
+        //These commented chunks are designed to make it more of a continuous run
+        //This doesn't really work, as the AI will just learn to guess whatever the last success was
+        // if(trial%10==0)
+        // {
+            WM.newEpisode(true);
+            generateTrial(current_state);
+            chunk=generateS();
+        // }else{
+        //     WM.newEpisode(false);//this triggers reward
+        //     resetSuccess(current_state);
+        //     chunk=generateChoice();
+        // }
+
         bool flag = false;
-        // chunk=generateS();
-        do
+        while(/*ch->sir!=R||*/!flag)
         {
-            chunk=generateChoice();
             ch = (sir_chunk*)chunk.getData();
             if(debug)
                 cout<<"Generated Choice: "<<getLetterFromChunk(chunk)<<" "<<ch->value<<endl;
@@ -150,8 +165,8 @@ void RunSimulation(bool verbose, bool end)
                 flag = true;
             candidate_chunks.push_back(chunk);
             WM.tickEpisodeClock(candidate_chunks,false);//this triggers reward
+            chunk=generateChoice();
         }
-        while(/*ch->sir!=R||*/!flag);
 
 
 
@@ -192,11 +207,21 @@ void RunSimulation(bool verbose, bool end)
     }
 }
 
-void generateTrial(state& current_state)
+void resetSuccess(state& current_state)
 {
     // current_state.sir = NOTHING;
     // current_state.value = 0;
     // current_state.saved = 0;
+    current_state.success=0;
+    current_state.tested=0;
+}
+
+
+void generateTrial(state& current_state)
+{
+    current_state.sir = NOTHING;
+    current_state.value = 0;
+    current_state.saved = 0;
     current_state.success=0;
     current_state.tested=0;
 }
@@ -234,9 +259,10 @@ double user_reward_function(WorkingMemory& wm)
     else 
     if(ch->value==current_state->saved)
     {
-        reward = 10.;//changing the value of the given reward drastically affects runtime
+        reward = 100.;//changing the value of the given reward drastically affects runtime
         current_state->success = 1;
     }
+    else{reward = -1.;}
 
     
     if(debug)
