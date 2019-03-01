@@ -134,25 +134,25 @@ void RunSimulation(bool verbose, bool end)//these variables hold easy verbose op
     sir_chunk *ch;
     for(int trial = 0; trial< number_of_trials; trial++)
     {
-        //These commented chunks are designed to make it more of a continuous run
-        //This doesn't really work, as the AI will usually just learn to guess whatever the last success was
+        //These if statements are designed to make it more of a continuous run
+        //This doesn't really work on it's own, as the AI will usually just learn to guess whatever the last success was
         //Will probably learn, but it will take a very long runtime (greater than MAX_INT)
 
 
-        // if(trial%10==0)
-        // {
+        if(trial%10==0)
+        {
 
 
             WM.newEpisode(true);
             generateTrial(current_state);
             chunk=generateS();//this force generates an S so we can confirm we always have one
-                              //this makes it easier for the AI to pickup on the S as well
+                            //   this makes it easier for the AI to pickup on the S as well
 
-        // }else{
-        //     WM.newEpisode(false);//this triggers reward
-        //     resetSuccess(current_state);
-        //     chunk=generateChoice();
-        // }
+        }else{
+            WM.newEpisode(false);//this triggers reward
+            resetSuccess(current_state);
+            chunk=generateChoice();
+        }
 
         bool flag = false; //this flag is used to see if we have seen an R
         while(!flag)
@@ -162,14 +162,17 @@ void RunSimulation(bool verbose, bool end)//these variables hold easy verbose op
                 cout<<"Generated Choice: "<<getLetterFromChunk(chunk)<<" "<<ch->value<<endl;
             current_state.sir = ch->sir;
             current_state.value = ch->value;
-            if(current_state.sir==S)
+            if(current_state.sir==S)//we store the last saved value
             {
                 current_state.saved=current_state.value;
             }
-            if(ch->sir==R)
+            if(ch->sir==R)//our flag for breakign out of the while
                 flag = true;
             candidate_chunks.push_back(chunk);
-            WM.tickEpisodeClock(candidate_chunks,false);//this triggers reward
+
+            //this function empties our canidate_chunks, and sends this data, and the state vector data to the working memory
+            //it also produces the reward
+            WM.tickEpisodeClock(candidate_chunks,true);
             chunk=generateChoice();
         }
 
@@ -257,11 +260,11 @@ double user_reward_function(WorkingMemory& wm)
     int x = rand()%number_of_chunks;
     sir_chunk* ch = ((sir_chunk*)(wm.getChunk(x).getData()));
     //this commented block helps the AI learn a little quicker, though it will learn anyway without it
-    // if(ch->sir==I)
-    // {
-    //     reward = -1.;
-    // }
-    // else 
+    if(ch->sir==I)
+    {
+        reward = -1.;
+    }
+    else 
 
     if(ch->value==current_state->saved)
     {
